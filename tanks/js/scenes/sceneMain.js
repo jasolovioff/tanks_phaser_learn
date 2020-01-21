@@ -11,6 +11,7 @@ class SceneMain extends Phaser.Scene {
         this.load.image("bullet2", "images/main/bullet2.png");
     };
     create(){
+        this.firedFlag = false;
         this.canFire = false;
         this.messages = [];
         this.setUpMessages();
@@ -38,6 +39,7 @@ class SceneMain extends Phaser.Scene {
         if(this.canFire == true){
             this.showBullet(this.tank1, this.tank2);
         }else{
+            this.setLoseMessage("Fired too early!");
             this.showBullet(this.tank2, this.tank1);
         }
     }
@@ -83,6 +85,11 @@ class SceneMain extends Phaser.Scene {
         });
     }
     showBullet(firedTank, hitTank){
+        if (this.firedFlag){
+            return;
+        }
+        this.firedFlag = true;
+        this.messageTimer.remove(false);
         this.showSmoke(firedTank);
         var ty = hitTank.y;
 
@@ -126,20 +133,59 @@ class SceneMain extends Phaser.Scene {
         });
     }
     setUpMessages(){
-        this.messages.push("Ready");
-        this.messages.push("Steady");
-        this.messages.push("Fire!");
-    }
-    setNextMessage(){
-        var message = this.messages.shift();
-        this.messageText(message);
+        this.messages.push({
+            text: "Ready",
+            style: {
+                fontFamily: 'ZCOOL QingKe HuangYou',
+                fontSize: '46px',
+                color: '#000000'
+            }
+        });
+        this.messages.push({
+            text: "Steady",
+            style: {
+                fontFamily: 'ZCOOL QingKe HuangYou',
+                fontSize: '46px',
+                color: '#000000'
+            }
+        });
+        this.messages.push({
+            text: "Fire!",
+            style: {
+                fontFamily: 'ZCOOL QingKe HuangYou',
+                fontSize: '72px',
+                color: '#ff0000'
+            }
+        });
     }
     setNextMessage(){
         var message = this.messages.shift();
         if (this.messages.length == 0){
+            this.canFire = true;
             this.messageTimer.remove(false);
+            //
+            //
+            var delay = 500 + Math.random()*1000;
+            this.shootTimer = this.time.addEvent({
+                delay: delay,
+                callback: this.computerShoot,
+                callbackScope: this,
+                loop: false
+            });
         }
-        this.messageText.setText(message);
+        console.log(message);
+        this.messageText.setText(message.text);
+        this.messageText.setStyle(message.style);
+    }
+    computerShoot(){
+        if (!this.firedFlag){
+            this.setLoseMessage("Waited too long!")
+        }
+        this.showBullet(this.tank2, this.tank1);
+    }
+    setLoseMessage(reason){
+        this.messageText.setText(reason);
+        this.messageText.setStyle({fontFamily:'Fresca', fontSize: '64px', color: '#ff0000'});
     }
     update(){
         // constant running loop
